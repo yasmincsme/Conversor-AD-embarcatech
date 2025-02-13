@@ -20,9 +20,8 @@
 #define BUTTON_A 5 
 #define BUTTON_B 6
 
-#define LED_RED 13
-#define LED_BLUE 12
-#define LED_GREEN 11
+#define LED_RED 13  // GPIO 13 (slice 6, canal A)
+#define LED_BLUE 12 // GPIO 12 (slice 6, canal B)
 
 void gpio_irq_handler(uint gpio, uint32_t events) {
 	reset_usb_boot(0, 0);
@@ -38,14 +37,23 @@ void buttons_init() {
 	gpio_pull_up(BUTTON_B);
 }
 
+void leds_init() {
+    // Configura os pinos dos LEDs como PWM
+    gpio_set_function(LED_RED, GPIO_FUNC_PWM);
+    gpio_set_function(LED_BLUE, GPIO_FUNC_PWM);
+
+    // Obtém o slice de PWM (mesmo slice para ambos os LEDs)
+    uint slice_num = pwm_gpio_to_slice_num(LED_RED);
+
+    // Configura o PWM
+    pwm_config config = pwm_get_default_config();
+    pwm_config_set_wrap(&config, 255); // Define o valor máximo do PWM como 255
+    pwm_init(slice_num, &config, true); // Inicializa o PWM
+}
+
 void led_set_value(uint16_t adc_value, uint8_t led) {
-    gpio_set_function(led, GPIO_FUNC_PWM); 
     uint slice_num = pwm_gpio_to_slice_num(led); 
     uint channel_num = pwm_gpio_to_channel(led); 
-
-    pwm_config config = pwm_get_default_config();
-    pwm_config_set_wrap(&config, 255); 
-    pwm_init(slice_num, &config, true); 
 
     if (adc_value == 2048) {
         pwm_set_chan_level(slice_num, channel_num, 0); // LED apagado
@@ -69,10 +77,10 @@ void ADC_init() {
 }
 
 void ADC_read(uint16_t* adc_value_x, uint16_t* adc_value_y) {
-	adc_select_input(1); 
-    *adc_value_x = adc_read(); 
-    adc_select_input(0);
-    *adc_value_y = adc_read();
+	adc_select_input(1); // Seleciona o canal do eixo Y (GPIO 27)
+    *adc_value_x = adc_read(); // Lê o valor do eixo Y
+    adc_select_input(0); // Seleciona o canal do eixo X (GPIO 26)
+    *adc_value_y = adc_read(); // Lê o valor do eixo X
 }
 
 void I2C_init() {
@@ -86,6 +94,7 @@ void I2C_init() {
 int main() {
 	stdio_init_all();
 	buttons_init();
+	leds_init(); // Inicializa os LEDs
 	ADC_init();
 	I2C_init();
 
@@ -105,7 +114,9 @@ int main() {
 		sprintf(str_x, "%d", adc_value_x); 
 		sprintf(str_y, "%d", adc_value_y);  
 
+		// Eixo X controla o LED vermelho (canal A)
 		led_set_value(adc_value_x, LED_RED);
+		// Eixo Y controla o LED azul (canal B)
 		led_set_value(adc_value_y, LED_BLUE);
 
 		printf("x: %d\n", adc_value_x);
