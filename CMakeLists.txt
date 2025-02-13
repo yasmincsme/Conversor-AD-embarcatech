@@ -57,6 +57,7 @@ target_include_directories(Conversor-AD-embarcatech PRIVATE
 target_link_libraries(Conversor-AD-embarcatech 
         hardware_i2c
         hardware_adc
+        hardware_pwm
 )
 
 pico_add_extra_outputs(Conversor-AD-embarcatech)
