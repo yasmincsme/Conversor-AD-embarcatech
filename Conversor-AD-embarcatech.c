@@ -42,13 +42,13 @@ void leds_init() {
     gpio_set_function(LED_RED, GPIO_FUNC_PWM);
     gpio_set_function(LED_BLUE, GPIO_FUNC_PWM);
 
-    // Obtém o slice de PWM (mesmo slice para ambos os LEDs)
+    // Obtém o slice de PWM
     uint slice_num = pwm_gpio_to_slice_num(LED_RED);
 
     // Configura o PWM
     pwm_config config = pwm_get_default_config();
-    pwm_config_set_wrap(&config, 255); // Define o valor máximo do PWM como 255
-    pwm_init(slice_num, &config, true); // Inicializa o PWM
+    pwm_config_set_wrap(&config, 255); 
+    pwm_init(slice_num, &config, true);
 }
 
 void led_set_value(uint16_t adc_value, uint8_t led) {
@@ -94,7 +94,7 @@ void I2C_init() {
 int main() {
 	stdio_init_all();
 	buttons_init();
-	leds_init(); // Inicializa os LEDs
+	leds_init(); 
 	ADC_init();
 	I2C_init();
 
@@ -114,9 +114,7 @@ int main() {
 		sprintf(str_x, "%d", adc_value_x); 
 		sprintf(str_y, "%d", adc_value_y);  
 
-		// Eixo X controla o LED vermelho (canal A)
 		led_set_value(adc_value_x, LED_RED);
-		// Eixo Y controla o LED azul (canal B)
 		led_set_value(adc_value_y, LED_BLUE);
 
 		printf("x: %d\n", adc_value_x);
