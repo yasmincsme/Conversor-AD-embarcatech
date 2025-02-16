@@ -13,19 +13,22 @@
 #define I2C_SCL 15
 #define endereco 0x3C
 
-#define JOYSTICK_X_PIN 26  
-#define JOYSTICK_Y_PIN 27 
+#define JOYSTICK_X 26  
+#define JOYSTICK_Y 27 
 #define JOYSTICK_PB 22 
 
 #define BUTTON_A 5 
 #define BUTTON_B 6
 
-#define LED_RED 13  // GPIO 13 (slice 6, canal A)
-#define LED_BLUE 12 // GPIO 12 (slice 6, canal B)
+#define LED_RED 13  
+#define LED_BLUE 12 
+#define LED_GREEN 11 
 
-void gpio_irq_handler(uint gpio, uint32_t events) {
-	reset_usb_boot(0, 0);
-}
+#define DEBOUNCE_TIME_US 200000
+
+static volatile uint32_t last_press_A = 0;
+static volatile uint32_t last_press_B = 0;
+static volatile uint32_t last_press_PB = 0;
 
 void buttons_init() {
 	gpio_init(BUTTON_A);
@@ -35,9 +38,17 @@ void buttons_init() {
 	gpio_init(BUTTON_B);
 	gpio_set_dir(BUTTON_B, GPIO_IN);
 	gpio_pull_up(BUTTON_B);
+
+	gpio_init(JOYSTICK_PB);
+	gpio_set_dir(JOYSTICK_PB, GPIO_IN);
+	gpio_pull_up(JOYSTICK_PB);
 }
 
 void leds_init() {
+	gpio_init(LED_GREEN);
+	gpio_set_dir(LED_GREEN, GPIO_OUT);
+	gpio_put(LED_GREEN, 0);
+
     // Configura os pinos dos LEDs como PWM
     gpio_set_function(LED_RED, GPIO_FUNC_PWM);
     gpio_set_function(LED_BLUE, GPIO_FUNC_PWM);
@@ -68,8 +79,8 @@ void led_set_value(uint16_t adc_value, uint8_t led) {
 
 void ADC_init() {
 	adc_init();
-	adc_gpio_init(JOYSTICK_X_PIN);
-	adc_gpio_init(JOYSTICK_Y_PIN);
+	adc_gpio_init(JOYSTICK_X);
+	adc_gpio_init(JOYSTICK_Y);
 
 	gpio_init(JOYSTICK_PB);
 	gpio_set_dir(JOYSTICK_PB, GPIO_IN);
@@ -91,6 +102,36 @@ void I2C_init() {
 	gpio_pull_up(I2C_SCL); 
 }
 
+static void gpio_irq_handler(uint gpio, uint32_t events) {
+	uint32_t current_time = to_us_since_boot(get_absolute_time());
+
+	if(gpio == BUTTON_A && (events & GPIO_IRQ_EDGE_FALL)) {
+		if(current_time - last_press_A > DEBOUNCE_TIME_US) {
+			last_press_A = current_time;
+			led_set_value(LED_RED, 0);
+			led_set_value(LED_BLUE, 0);
+		}
+	}
+	else if(gpio == BUTTON_B && (events & GPIO_IRQ_EDGE_FALL)) {
+		if(current_time - last_press_B > DEBOUNCE_TIME_US) {
+			last_press_B = current_time;
+			reset_usb_boot(0, 0);
+		}
+	}
+	else if(gpio == JOYSTICK_PB && (events & GPIO_IRQ_EDGE_FALL)) {
+		if(current_time - last_press_PB > DEBOUNCE_TIME_US) {
+			last_press_PB = current_time;
+			gpio_put(LED_GREEN, 1);
+			// if(gpio_get(LED_GREEN) == 0) {
+			// 	gpio_put(LED_GREEN, 1);
+			// }
+			// else {
+			// 	gpio_put(LED_GREEN, 0);
+			// }
+		}
+	}
+}
+
 int main() {
 	stdio_init_all();
 	buttons_init();
@@ -98,7 +139,9 @@ int main() {
 	ADC_init();
 	I2C_init();
 
+	gpio_set_irq_enabled_with_callback(BUTTON_A, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
 	gpio_set_irq_enabled_with_callback(BUTTON_B, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
+	gpio_set_irq_enabled_with_callback(JOYSTICK_PB, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
 
 	uint16_t adc_value_x;
 	uint16_t adc_value_y;  
