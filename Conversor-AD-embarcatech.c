@@ -30,6 +30,8 @@ static volatile uint32_t last_press_A = 0;
 static volatile uint32_t last_press_B = 0;
 static volatile uint32_t last_press_PB = 0;
 
+static volatile uint8_t trigger = 0;
+
 void buttons_init() {
 	gpio_init(BUTTON_A);
 	gpio_set_dir(BUTTON_A, GPIO_IN);
@@ -62,19 +64,24 @@ void leds_init() {
     pwm_init(slice_num, &config, true);
 }
 
-void led_set_value(uint16_t adc_value, uint8_t led) {
+void led_set_value(uint16_t adc_value, uint8_t led, uint8_t trigger) {
     uint slice_num = pwm_gpio_to_slice_num(led); 
     uint channel_num = pwm_gpio_to_channel(led); 
 
-    if (adc_value == 2048) {
-        pwm_set_chan_level(slice_num, channel_num, 0); // LED apagado
-    } else if (adc_value > 2048) {
-        uint8_t brightness = (adc_value - 2048) / 8; // Mapeia para 0-255
-        pwm_set_chan_level(slice_num, channel_num, brightness);
-    } else {
-        uint8_t brightness = (2048 - adc_value) / 8; // Mapeia para 0-255
-        pwm_set_chan_level(slice_num, channel_num, brightness);
-    }
+	if(trigger) {
+		if (adc_value == 2048) {
+			pwm_set_chan_level(slice_num, channel_num, 0); // LED apagado
+		} else if (adc_value > 2048) {
+			uint8_t brightness = (adc_value - 2048) / 8; // Mapeia para 0-255
+			pwm_set_chan_level(slice_num, channel_num, brightness);
+		} else {
+			uint8_t brightness = (2048 - adc_value) / 8; // Mapeia para 0-255
+			pwm_set_chan_level(slice_num, channel_num, brightness);
+		}
+	}
+	else {
+		pwm_set_chan_level(slice_num, channel_num, 0);
+	}
 }
 
 void ADC_init() {
@@ -108,8 +115,11 @@ static void gpio_irq_handler(uint gpio, uint32_t events) {
 	if(gpio == BUTTON_A && (events & GPIO_IRQ_EDGE_FALL)) {
 		if(current_time - last_press_A > DEBOUNCE_TIME_US) {
 			last_press_A = current_time;
-			led_set_value(LED_RED, 0);
-			led_set_value(LED_BLUE, 0);
+			if(trigger) {
+				trigger = 0;
+			} else {
+				trigger = 1;
+			}
 		}
 	}
 	else if(gpio == BUTTON_B && (events & GPIO_IRQ_EDGE_FALL)) {
@@ -121,13 +131,12 @@ static void gpio_irq_handler(uint gpio, uint32_t events) {
 	else if(gpio == JOYSTICK_PB && (events & GPIO_IRQ_EDGE_FALL)) {
 		if(current_time - last_press_PB > DEBOUNCE_TIME_US) {
 			last_press_PB = current_time;
-			gpio_put(LED_GREEN, 1);
-			// if(gpio_get(LED_GREEN) == 0) {
-			// 	gpio_put(LED_GREEN, 1);
-			// }
-			// else {
-			// 	gpio_put(LED_GREEN, 0);
-			// }
+			if(gpio_get(LED_GREEN)) {
+				gpio_put(LED_GREEN, 0);
+			}
+			else {
+				gpio_put(LED_GREEN, 1);
+			}
 		}
 	}
 }
@@ -157,8 +166,8 @@ int main() {
 		sprintf(str_x, "%d", adc_value_x); 
 		sprintf(str_y, "%d", adc_value_y);  
 
-		led_set_value(adc_value_x, LED_RED);
-		led_set_value(adc_value_y, LED_BLUE);
+		led_set_value(adc_value_x, LED_RED, trigger);
+		led_set_value(adc_value_y, LED_BLUE, trigger);
 
 		printf("x: %d\n", adc_value_x);
 		printf("y: %d\n", adc_value_y);
