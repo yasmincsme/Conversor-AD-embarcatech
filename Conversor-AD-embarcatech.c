@@ -10,21 +10,24 @@
 ssd1306_t ssd;
 bool cor = true;
 
-static uint16_t value_x = 60; 
-static uint16_t value_y = 25; 
-
+static uint16_t value_x = 0; 
+static uint16_t value_y = 0; 
 
 void display_task() {
 	while (true) {
-		ssd1306_fill(&ssd, !cor); //Limpa o display
-		ssd1306_rect(&ssd, 3, 3, 122, 58, cor, !cor); //Desenha a borda
+		ssd1306_fill(&ssd, !cor);
 
+		if(gpio_get(LED_GREEN)) {
+			ssd1306_rect(&ssd, 3, 3, 122, 58, cor, !cor); 
+		}
+		else {
+			ssd1306_rect(&ssd, 3, 3, 122, 58, cor, !cor);
+			ssd1306_rect(&ssd, 0, 0, 128, 64, cor, !cor);  
+		}
+		
 		ssd1306_draw_char(&ssd, '|', value_x, value_y);
-
-		ssd1306_send_data(&ssd); //Atualiza o display
-		sleep_ms(1000);
+		ssd1306_send_data(&ssd); 
 	}
-	
 }
 
 int main() {
@@ -61,6 +64,6 @@ int main() {
 		printf("x: %d\n", adc_value_x);
 		printf("y: %d\n", adc_value_y);
 
-		sleep_ms(500);
+		sleep_ms(600);
 	}
 }

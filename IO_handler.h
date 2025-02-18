@@ -7,13 +7,6 @@
 #define JOYSTICK_X 26  
 #define JOYSTICK_Y 27 
 
-#define CENTER_DISPLAY_X 60
-#define CENTER_DISPLAY_Y 25
-#define MAX_DISPLAY_X 115
-#define MAX_DISPLAY_Y 51
-#define MIN_DISPLAY_X 5
-#define MIN_DISPLAY_Y 5
-
 #define PADDING 3
 
 #define CENTER_JOYSTICK 2048

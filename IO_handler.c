@@ -74,35 +74,18 @@ void leds_set(uint16_t adc_value, uint8_t led, uint8_t trigger) {
 }
 
 void display_set(uint16_t adc_value_x, uint16_t adc_value_y, uint16_t* value_x, uint16_t* value_y) {
-    
-	if(adc_value_x >= CENTER_JOYSTICK + PADDING || adc_value_x <= CENTER_JOYSTICK + PADDING) {
-		*value_x = CENTER_DISPLAY_X;
-	}
-	else {
-		*value_x = MAX_DISPLAY_X;
-	}
+    const uint16_t MIN_X = 5, MAX_X = 115; // Borda de 5 pixels no X
+    const uint16_t MIN_Y = 5, MAX_Y = 51;  // Borda de 5 pixels no Y
 
-	
+    // Mapeia os valores do joystick para a área útil do display
+    *value_x = MIN_X + ((adc_value_x * (MAX_X - MIN_X)) / 4095);
+    *value_y = MAX_Y - ((adc_value_y * (MAX_Y - MIN_Y)) / 4095); // Inverte o eixo Y
 
-	// if(adc_value_x == 2048) {
-	// 	*value_x = 60;
-	// }
-	// else if(adc_value_x > 2048) {
-	// 	*value_x = 0;
-	// } 
-	// else {
-	// 	*value_x = 0;
-	// }
-
-	// if(adc_value_y == 2048) {
-	// 	*value_y = 25;
-	// }
-	// else if(adc_value_y > 2048) {
-	// 	*value_y = 0;
-	// } 
-	// else {
-	// 	*value_x = 0;
-	// }
+    // Garante que os valores estejam dentro dos limites
+    if (*value_x < MIN_X) *value_x = MIN_X;
+    if (*value_x > MAX_X) *value_x = MAX_X;
+    if (*value_y < MIN_Y) *value_y = MIN_Y;
+    if (*value_y > MAX_Y) *value_y = MAX_Y;
 }
 
 void I2C_init() {
