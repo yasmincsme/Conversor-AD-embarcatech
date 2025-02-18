@@ -73,6 +73,38 @@ void leds_set(uint16_t adc_value, uint8_t led, uint8_t trigger) {
 	}
 }
 
+void display_set(uint16_t adc_value_x, uint16_t adc_value_y, uint16_t* value_x, uint16_t* value_y) {
+    
+	if(adc_value_x >= CENTER_JOYSTICK + PADDING || adc_value_x <= CENTER_JOYSTICK + PADDING) {
+		*value_x = CENTER_DISPLAY_X;
+	}
+	else {
+		*value_x = MAX_DISPLAY_X;
+	}
+
+	
+
+	// if(adc_value_x == 2048) {
+	// 	*value_x = 60;
+	// }
+	// else if(adc_value_x > 2048) {
+	// 	*value_x = 0;
+	// } 
+	// else {
+	// 	*value_x = 0;
+	// }
+
+	// if(adc_value_y == 2048) {
+	// 	*value_y = 25;
+	// }
+	// else if(adc_value_y > 2048) {
+	// 	*value_y = 0;
+	// } 
+	// else {
+	// 	*value_x = 0;
+	// }
+}
+
 void I2C_init() {
 	i2c_init(I2C_PORT, 400 * 1000);
 	gpio_set_function(I2C_SDA, GPIO_FUNC_I2C); 

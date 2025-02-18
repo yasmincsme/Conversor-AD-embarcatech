@@ -10,10 +10,16 @@
 ssd1306_t ssd;
 bool cor = true;
 
+static uint16_t value_x = 60; 
+static uint16_t value_y = 25; 
+
+
 void display_task() {
 	while (true) {
 		ssd1306_fill(&ssd, !cor); //Limpa o display
 		ssd1306_rect(&ssd, 3, 3, 122, 58, cor, !cor); //Desenha a borda
+
+		ssd1306_draw_char(&ssd, '|', value_x, value_y);
 
 		ssd1306_send_data(&ssd); //Atualiza o display
 		sleep_ms(1000);
@@ -33,16 +39,18 @@ int main() {
 	gpio_set_irq_enabled_with_callback(BUTTON_B, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
 	gpio_set_irq_enabled_with_callback(JOYSTICK_PB, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
 
-	multicore_launch_core1(display_task);
+	multicore_launch_core1(display_task); 
 
 	uint16_t adc_value_x;
-	uint16_t adc_value_y;  
+	uint16_t adc_value_y; 
 
 	char str_x[5];  
 	char str_y[5];  
 
 	while (true) {
 		joystick_read(&adc_value_x, &adc_value_y);
+
+		display_set(adc_value_x, adc_value_y, &value_x, &value_y);
 
 		sprintf(str_x, "%d", adc_value_x); 
 		sprintf(str_y, "%d", adc_value_y);  
@@ -53,6 +61,6 @@ int main() {
 		printf("x: %d\n", adc_value_x);
 		printf("y: %d\n", adc_value_y);
 
-		sleep_ms(100);
+		sleep_ms(500);
 	}
 }
