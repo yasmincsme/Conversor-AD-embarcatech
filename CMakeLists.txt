@@ -35,7 +35,7 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(Conversor-AD-embarcatech Conversor-AD-embarcatech.c inc/ssd1306.c)
+add_executable(Conversor-AD-embarcatech Conversor-AD-embarcatech.c inc/ssd1306.c IO_handler.c)
 
 pico_set_program_name(Conversor-AD-embarcatech "Conversor-AD-embarcatech")
 pico_set_program_version(Conversor-AD-embarcatech "0.1")
