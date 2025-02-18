@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "pico/stdlib.h"
+#include <pico/multicore.h>
 #include "hardware/adc.h"
 #include "hardware/i2c.h"
 #include "pico/bootrom.h"
@@ -15,10 +16,6 @@
 
 #define JOYSTICK_X 26  
 #define JOYSTICK_Y 27 
-#define JOYSTICK_PB 22 
-
-#define BUTTON_A 5 
-#define BUTTON_B 6
 
 #define LED_RED 13  
 #define LED_BLUE 12 
@@ -32,19 +29,10 @@ static volatile uint32_t last_press_PB = 0;
 
 static volatile uint8_t trigger = 0;
 
-void buttons_init() {
-	gpio_init(BUTTON_A);
-	gpio_set_dir(BUTTON_A, GPIO_IN);
-	gpio_pull_up(BUTTON_A);
+void display_task() {
 
-	gpio_init(BUTTON_B);
-	gpio_set_dir(BUTTON_B, GPIO_IN);
-	gpio_pull_up(BUTTON_B);
-
-	gpio_init(JOYSTICK_PB);
-	gpio_set_dir(JOYSTICK_PB, GPIO_IN);
-	gpio_pull_up(JOYSTICK_PB);
 }
+
 
 void leds_init() {
 	gpio_init(LED_GREEN);
@@ -142,6 +130,7 @@ static void gpio_irq_handler(uint gpio, uint32_t events) {
 }
 
 int main() {
+
 	stdio_init_all();
 	buttons_init();
 	leds_init(); 
@@ -152,12 +141,15 @@ int main() {
 	gpio_set_irq_enabled_with_callback(BUTTON_B, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
 	gpio_set_irq_enabled_with_callback(JOYSTICK_PB, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
 
+	multicore_launch_core1(display_task);
+
 	uint16_t adc_value_x;
 	uint16_t adc_value_y;  
 
 	char str_x[5];  
 	char str_y[5];  
 
+	ssd1306_t ssd;
 	bool cor = true;
 
 	while (true) {

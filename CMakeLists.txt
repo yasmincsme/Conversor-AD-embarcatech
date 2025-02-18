@@ -58,6 +58,7 @@ target_link_libraries(Conversor-AD-embarcatech
         hardware_i2c
         hardware_adc
         hardware_pwm
+        pico_multicore
 )
 
 pico_add_extra_outputs(Conversor-AD-embarcatech)
